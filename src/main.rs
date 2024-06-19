@@ -7,7 +7,13 @@ use crossterm::style::{ Color, Print, ResetColor, SetForegroundColor };
 use crossterm::ExecutableCommand;
 
 fn main() -> io::Result<()> {
-    let re = Regex::new(r"\.unwrap\(\)").unwrap();
+    let re = match Regex::new(r"\.unwrap\(\)") {
+        Ok(re) => re,
+        Err(e) => {
+            return Err(io::Error::new(io::ErrorKind::Other, e));
+        }
+    };
+
     let mut found_unwrap = false;
     for entry in WalkDir::new(".")
         .into_iter()
@@ -20,10 +26,7 @@ fn main() -> io::Result<()> {
         ) {
         let path = entry.path();
         let display = path.display();
-        let file = match File::open(&path) {
-            Err(why) => panic!("couldn't open {}: {}", display, why),
-            Ok(file) => file,
-        };
+        let file = File::open(&path)?;
         let reader = io::BufReader::new(file);
         for (num, line) in reader.lines().enumerate() {
             let l = line?;
